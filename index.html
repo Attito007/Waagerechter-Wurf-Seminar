@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waagerechter Wurf – digitales Schülerexperiment</title>
+  <style>
+    :root{
+      --bg:#f7f8fb;
+      --panel:#ffffff;
+      --card:#f2f4f8;
+      --text:#18212f;
+      --muted:#6b7280;
+      --border:#d7dce3;
+      --accent:#2563eb;
+      --accent-bg:#dbeafe;
+      --series-2:#2563eb;
+      --series-3:#dc2626;
+      --series-4:#7c5a3a;
+      --series-5:#8b5e3c;
+      --series-6:#0f766e;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      line-height:1.45;
+    }
+    .wrap{
+      max-width:1050px;
+      margin:0 auto;
+      padding:24px;
+    }
+    h1{margin:0 0 8px;font-size:2rem}
+    h2,h3{margin:0}
+    .lead{margin:0;color:var(--muted)}
+    .space{display:grid;gap:18px}
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:18px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+    }
+    .muted{color:var(--muted)}
+    .small{font-size:.92rem}
+    .btn{
+      min-height:44px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:700;
+      font-size:1rem;
+      background:var(--panel);
+      color:var(--text);
+      cursor:pointer;
+    }
+    .btn:hover{filter:brightness(.98)}
+    .btn.primary{
+      background:var(--accent-bg);
+      border-color:var(--accent);
+    }
+    .btn:focus-visible{
+      outline:3px solid var(--accent);
+      outline-offset:2px;
+    }
+    .btn[aria-pressed="true"]{
+      border-color:var(--accent);
+      box-shadow:0 0 0 2px var(--accent);
+    }
+    .btn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+    }
+    .grid-5{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:8px;
+    }
+    .two-col{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:12px;
+      align-items:stretch;
+    }
+    .metrics{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+    .metric{
+      display:grid;
+      gap:4px;
+    }
+    .metric strong{
+      font-size:1.2rem;
+      font-variant-numeric:tabular-nums;
+    }
+    .flex{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .stage{
+      position:relative;
+      overflow:hidden;
+      border:1px solid var(--border);
+      border-radius:16px;
+      background:linear-gradient(to bottom,var(--panel) 0 74%,var(--card) 74% 100%);
+      aspect-ratio:16/8;
+      min-height:290px;
+    }
+    .tabletop{
+      position:absolute;left:0;top:43%;width:51%;height:8%;
+      background:var(--series-5);border-radius:0 5px 5px 0;
+    }
+    .leg{
+      position:absolute;left:43%;top:51%;width:4%;height:36%;
+      background:var(--series-5);
+    }
+    .ramp{
+      position:absolute;left:5%;top:20%;width:38%;height:8px;
+      background:var(--series-4);transform:rotate(16deg);
+      transform-origin:left center;border-radius:5px;
+    }
+    .track{
+      position:absolute;left:36%;top:40%;width:15%;height:8px;
+      background:var(--series-4);border-radius:5px;
+    }
+    .floor{
+      position:absolute;left:0;right:0;bottom:13%;height:3px;
+      background:var(--border);
+    }
+    .paper{
+      position:absolute;left:59%;bottom:13%;width:34%;height:7%;
+      background:#fff;border:1px dashed var(--muted);
+    }
+    .ball{
+      position:absolute;width:18px;height:18px;border-radius:999px;
+      background:var(--series-2);border:2px solid var(--text);
+      transform:translate(-50%,-50%);z-index:4;
+    }
+    .impact{
+      position:absolute;width:10px;height:10px;border-radius:999px;
+      background:var(--series-3);transform:translate(-50%,50%);
+      display:none;
+    }
+    .startdot{
+      position:absolute;width:14px;height:14px;border-radius:999px;
+      background:var(--series-6);border:2px solid #fff;
+      transform:translate(-50%,-50%);opacity:.45;
+    }
+    .startdot.active{
+      opacity:1;
+      box-shadow:0 0 0 3px var(--accent);
+    }
+    .label{
+      position:absolute;
+      font-size:.78rem;
+      color:var(--muted);
+      background:rgba(255,255,255,.9);
+      padding:2px 6px;
+      border-radius:8px;
+      border:1px solid var(--border);
+    }
+    .scroll{overflow-x:auto}
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+    th,td{
+      border-bottom:1px solid var(--border);
+      padding:9px 8px;
+      text-align:center;
+      white-space:nowrap;
+    }
+    th{
+      font-size:.9rem;
+      color:var(--muted);
+      font-weight:700;
+    }
+    .full{width:100%}
+    .hidden{display:none}
+    .sr-only{
+      position:absolute;
+      width:1px;height:1px;
+      padding:0;margin:-1px;
+      overflow:hidden;clip:rect(0,0,0,0);
+      white-space:nowrap;border:0;
+    }
+    ol{margin-bottom:0}
+    svg{display:block;width:100%;height:auto}
+    @media (max-width:700px){
+      .wrap{padding:14px}
+      h1{font-size:1.55rem}
+      .metrics{grid-template-columns:1fr}
+      .two-col{grid-template-columns:1fr}
+      .stage{min-height:250px;aspect-ratio:auto;height:250px}
+      th,td{padding:8px 6px;font-size:.88rem}
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap space">
+    <header>
+      <h1>Waagerechter Wurf – digitales Schülerexperiment</h1>
+      <p class="lead">Quantitative Untersuchung der Abhängigkeit der Wurfweite von der Anfangsgeschwindigkeit.</p>
+    </header>
+
+    <section class="panel">
+      <h2>Forscherauftrag</h2>
+      <p>
+        Untersucht, wie die Wurfweite <strong>x</strong> von der horizontalen
+        Anfangsgeschwindigkeit <strong>v₀</strong> abhängt.
+        Die Abwurfhöhe bleibt konstant bei <strong>h = 0,80 m</strong>.
+      </p>
+      <ol>
+        <li>Wählt eine Startposition auf der Rampe.</li>
+        <li>Lasst die Kugel los.</li>
+        <li>Messt die Wurfweite.</li>
+        <li>Übernehmt den Messwert in eure Tabelle.</li>
+        <li>Führt mindestens fünf Messungen mit unterschiedlichen Startpositionen durch.</li>
+      </ol>
+    </section>
+
+    <section>
+      <div class="flex">
+        <div>
+          <h3>1. Startposition wählen</h3>
+          <div class="small muted">Je höher die Startposition, desto größer ist v₀.</div>
+        </div>
+        <div id="status" class="small muted" aria-live="polite">Startposition 1 ist ausgewählt.</div>
+      </div>
+
+      <div id="positions" class="grid-5" style="margin-top:10px">
+        <button type="button" class="btn pos" data-pos="0" aria-pressed="true">1</button>
+        <button type="button" class="btn pos" data-pos="1" aria-pressed="false">2</button>
+        <button type="button" class="btn pos" data-pos="2" aria-pressed="false">3</button>
+        <button type="button" class="btn pos" data-pos="3" aria-pressed="false">4</button>
+        <button type="button" class="btn pos" data-pos="4" aria-pressed="false">5</button>
+      </div>
+    </section>
+
+    <section class="stage" aria-label="Simulation des waagerechten Wurfs">
+      <div class="tabletop"></div>
+      <div class="leg"></div>
+      <div class="ramp"></div>
+      <div class="track"></div>
+      <div class="floor"></div>
+      <div class="paper"></div>
+
+      <div class="label" style="left:2%;top:9%">Rampe</div>
+      <div class="label" style="left:39%;top:30%">horizontaler Abwurf</div>
+      <div class="label" style="left:60%;bottom:3%">Messpapier</div>
+
+      <div id="sd0" class="startdot active" style="left:10%;top:24%"></div>
+      <div id="sd1" class="startdot" style="left:16%;top:27%"></div>
+      <div id="sd2" class="startdot" style="left:22%;top:30%"></div>
+      <div id="sd3" class="startdot" style="left:28%;top:33%"></div>
+      <div id="sd4" class="startdot" style="left:34%;top:36%"></div>
+
+      <div id="ball" class="ball" style="left:10%;top:24%"></div>
+      <div id="impact" class="impact"></div>
+    </section>
+
+    <section class="two-col">
+      <button id="launch" type="button" class="btn primary">2. Kugel loslassen</button>
+      <button id="resetRun" type="button" class="btn">Versuch zurücksetzen</button>
+    </section>
+
+    <section id="measurement" class="panel">
+      <div class="flex">
+        <div>
+          <h3>3. Messung</h3>
+          <p class="small muted">Die digitale Messung enthält kleine zufällige Messschwankungen.</p>
+        </div>
+        <button id="measure" type="button" class="btn" disabled>Wurfweite messen</button>
+      </div>
+
+      <div class="metrics" style="margin-top:12px">
+        <div class="card metric">
+          <span class="small muted">Startposition</span>
+          <strong id="mPos">–</strong>
+        </div>
+        <div class="card metric">
+          <span class="small muted">Anfangsgeschwindigkeit v₀</span>
+          <strong id="mV">–</strong>
+        </div>
+        <div class="card metric">
+          <span class="small muted">Wurfweite x</span>
+          <strong id="mX">–</strong>
+        </div>
+      </div>
+
+      <button id="record" type="button" class="btn primary full" style="margin-top:12px" disabled>
+        4. Messwert übernehmen
+      </button>
+    </section>
+
+    <section class="panel">
+      <div class="flex">
+        <div>
+          <h3>Messwerttabelle</h3>
+          <p id="countText" class="small muted">Noch keine Messung gespeichert.</p>
+        </div>
+        <button id="clear" type="button" class="btn">Tabelle leeren</button>
+      </div>
+
+      <div class="scroll" style="margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>Nr.</th>
+              <th>Startposition</th>
+              <th>v₀ [m/s]</th>
+              <th>x [m]</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr>
+              <td colspan="4" class="muted">Führt eure erste Messung durch.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="flex">
+        <div>
+          <h3>Auswertung</h3>
+          <p class="small muted">
+            Nach mindestens fünf gespeicherten Messungen könnt ihr eure Messpunkte darstellen.
+          </p>
+        </div>
+        <button id="evaluate" type="button" class="btn" disabled>Diagramm anzeigen</button>
+      </div>
+
+      <div id="chartWrap" class="hidden" style="margin-top:12px">
+        <svg id="chart" viewBox="0 0 700 420"
+             role="img"
+             aria-label="Diagramm Wurfweite gegen Anfangsgeschwindigkeit"></svg>
+        <div id="fitText" class="small" style="margin-top:8px"></div>
+      </div>
+    </section>
+
+    <div id="live" class="sr-only" aria-live="polite"></div>
+  </main>
+
+  <script>
+    (() => {
+      const nominal = [1.18, 1.06, 0.85, 0.71, 0.53];
+      const starts = [
+        {x:10,y:24},
+        {x:16,y:27},
+        {x:22,y:30},
+        {x:28,y:33},
+        {x:34,y:36}
+      ];
+
+      const h = 0.80;
+      const g = 9.81;
+      const t = Math.sqrt(2*h/g);
+
+      let selected = 0;
+      let run = null;
+      let rows = [];
+      let raf = null;
+
+      const $ = s => document.querySelector(s);
+
+      const ball = $('#ball');
+      const impact = $('#impact');
+      const measure = $('#measure');
+      const record = $('#record');
+      const status = $('#status');
+      const reduced = window.matchMedia &&
+                      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function setBallToStart(){
+        const p = starts[selected];
+        ball.style.left = p.x + '%';
+        ball.style.top = p.y + '%';
+        impact.style.display = 'none';
+      }
+
+      function select(i){
+        if(raf) return;
+
+        selected = i;
+
+        document.querySelectorAll('.pos').forEach((b,j) => {
+          b.setAttribute('aria-pressed', j === i ? 'true' : 'false');
+        });
+
+        starts.forEach((_,j) => {
+          $('#sd'+j).classList.toggle('active', j === i);
+        });
+
+        setBallToStart();
+
+        run = null;
+        measure.disabled = true;
+        record.disabled = true;
+
+        $('#mPos').textContent = '–';
+        $('#mV').textContent = '–';
+        $('#mX').textContent = '–';
+
+        status.textContent = 'Startposition ' + (i+1) + ' ist ausgewählt.';
+      }
+
+      document.querySelectorAll('.pos').forEach(b => {
+        b.addEventListener('click', () => select(Number(b.dataset.pos)));
+      });
+
+      function noise(a){
+        return (Math.random()*2 - 1)*a;
+      }
+
+      function makeRun(){
+        const v = Math.max(0.2, nominal[selected]*(1 + noise(0.018)));
+        const ideal = v*t;
+        const x = Math.max(0.05, ideal + noise(0.014));
+        return {pos:selected+1, v, x};
+      }
+
+      function launchRun(){
+        if(raf) return;
+
+        run = makeRun();
+        measure.disabled = true;
+        record.disabled = true;
+        impact.style.display = 'none';
+
+        $('#mPos').textContent = run.pos;
+        $('#mV').textContent = run.v.toFixed(2) + ' m/s';
+        $('#mX').textContent = '–';
+
+        status.textContent = 'Die Kugel ist unterwegs …';
+
+        const start = {x:51,y:41};
+        const endX = Math.min(91, 58 + run.x/0.50*31);
+        const endY = 87;
+
+        const duration = reduced ? 1 : 950;
+        const startTime = performance.now();
+
+        const step = now => {
+          const q = Math.min(1, (now-startTime)/duration);
+          const x = start.x + (endX-start.x)*q;
+          const y = start.y + (endY-start.y)*(q*q);
+
+          ball.style.left = x + '%';
+          ball.style.top = y + '%';
+
+          if(q < 1){
+            raf = requestAnimationFrame(step);
+          }else{
+            raf = null;
+
+            impact.style.left = endX + '%';
+            impact.style.bottom = '13%';
+            impact.style.display = 'block';
+
+            measure.disabled = false;
+            status.textContent = 'Die Kugel ist aufgetroffen. Messt jetzt die Wurfweite.';
+          }
+        };
+
+        raf = requestAnimationFrame(step);
+      }
+
+      $('#launch').addEventListener('click', launchRun);
+
+      measure.addEventListener('click', () => {
+        if(!run) return;
+
+        $('#mX').textContent = run.x.toFixed(3) + ' m';
+        record.disabled = false;
+        status.textContent = 'Messung abgeschlossen. Ihr könnt den Wert übernehmen.';
+      });
+
+      record.addEventListener('click', () => {
+        if(!run) return;
+
+        rows.push({...run});
+        renderTable();
+
+        record.disabled = true;
+        measure.disabled = true;
+
+        status.textContent =
+          'Messwert gespeichert. Wählt eine neue Startposition oder wiederholt die Messung.';
+
+        $('#live').textContent = 'Messwert ' + rows.length + ' gespeichert.';
+        $('#evaluate').disabled = rows.length < 5;
+      });
+
+      $('#resetRun').addEventListener('click', () => select(selected));
+
+      $('#clear').addEventListener('click', () => {
+        rows = [];
+        renderTable();
+        $('#evaluate').disabled = true;
+        $('#chartWrap').classList.add('hidden');
+      });
+
+      function renderTable(){
+        const tb = $('#tbody');
+        tb.innerHTML = '';
+
+        if(rows.length === 0){
+          tb.innerHTML =
+            '<tr><td colspan="4" class="muted">Führt eure erste Messung durch.</td></tr>';
+        }else{
+          rows.forEach((r,i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML =
+              '<td>' + (i+1) + '</td>' +
+              '<td>' + r.pos + '</td>' +
+              '<td><strong>' + r.v.toFixed(2) + '</strong></td>' +
+              '<td><strong>' + r.x.toFixed(3) + '</strong></td>';
+            tb.appendChild(tr);
+          });
+        }
+
+        $('#countText').textContent =
+          rows.length === 0
+            ? 'Noch keine Messung gespeichert.'
+            : rows.length + ' Messung' + (rows.length === 1 ? '' : 'en') + ' gespeichert.';
+      }
+
+      function regression(data){
+        const n = data.length;
+        let sx=0,sy=0,sxx=0,sxy=0;
+
+        data.forEach(r => {
+          sx += r.v;
+          sy += r.x;
+          sxx += r.v*r.v;
+          sxy += r.v*r.x;
+        });
+
+        const m = (n*sxy - sx*sy)/(n*sxx - sx*sx);
+        const b = (sy - m*sx)/n;
+
+        return {m,b};
+      }
+
+      function drawChart(){
+        const svg = $('#chart');
+        svg.innerHTML = '';
+
+        const NS='http://www.w3.org/2000/svg';
+        const W=700,H=420,L=75,R=25,T=25,B=65;
+
+        const xmin=0.4,xmax=1.3,ymin=0.15,ymax=0.55;
+
+        const X=v => L+(v-xmin)/(xmax-xmin)*(W-L-R);
+        const Y=v => H-B-(v-ymin)/(ymax-ymin)*(H-T-B);
+
+        function el(name,attrs,text){
+          const e=document.createElementNS(NS,name);
+          Object.entries(attrs||{}).forEach(([k,v]) => e.setAttribute(k,v));
+          if(text != null) e.textContent=text;
+          svg.appendChild(e);
+          return e;
+        }
+
+        el('line',{
+          x1:L,y1:T,x2:L,y2:H-B,
+          stroke:'currentColor','stroke-width':1.5
+        });
+
+        el('line',{
+          x1:L,y1:H-B,x2:W-R,y2:H-B,
+          stroke:'currentColor','stroke-width':1.5
+        });
+
+        for(let v=.4;v<=1.3001;v+=.1){
+          el('line',{
+            x1:X(v),y1:H-B,x2:X(v),y2:H-B+6,
+            stroke:'currentColor'
+          });
+          el('text',{
+            x:X(v),y:H-B+24,
+            'text-anchor':'middle',
+            'font-size':12,
+            fill:'currentColor'
+          },v.toFixed(1));
+        }
+
+        for(let y=.15;y<=.5501;y+=.05){
+          el('line',{
+            x1:L-6,y1:Y(y),x2:L,y2:Y(y),
+            stroke:'currentColor'
+          });
+          el('text',{
+            x:L-10,y:Y(y)+4,
+            'text-anchor':'end',
+            'font-size':12,
+            fill:'currentColor'
+          },y.toFixed(2));
+        }
+
+        rows.forEach(r => {
+          el('circle',{
+            cx:X(r.v),
+            cy:Y(r.x),
+            r:6,
+            fill:'#2563eb',
+            stroke:'currentColor',
+            'stroke-width':1
+          });
+        });
+
+        const {m,b}=regression(rows);
+
+        const ya=m*xmin+b;
+        const yb=m*xmax+b;
+
+        el('line',{
+          x1:X(xmin),
+          y1:Y(ya),
+          x2:X(xmax),
+          y2:Y(yb),
+          stroke:'#dc2626',
+          'stroke-width':3
+        });
+
+        el('text',{
+          x:(L+W-R)/2,
+          y:H-16,
+          'text-anchor':'middle',
+          'font-size':14,
+          fill:'currentColor'
+        },'Anfangsgeschwindigkeit v₀ [m/s]');
+
+        const yl=el('text',{
+          x:18,
+          y:(T+H-B)/2,
+          'text-anchor':'middle',
+          'font-size':14,
+          fill:'currentColor'
+        },'Wurfweite x [m]');
+
+        yl.setAttribute(
+          'transform',
+          'rotate(-90 18 '+((T+H-B)/2)+')'
+        );
+
+        $('#fitText').innerHTML =
+          'Ausgleichsgerade: <strong>x ≈ ' +
+          m.toFixed(3) +
+          ' · v₀ ' +
+          (b>=0 ? '+ ' : '− ') +
+          Math.abs(b).toFixed(3) +
+          '</strong>. Welche physikalische Bedeutung könnte die Steigung haben?';
+      }
+
+      $('#evaluate').addEventListener('click', () => {
+        drawChart();
+        $('#chartWrap').classList.remove('hidden');
+      });
+
+      setBallToStart();
+      renderTable();
+    })();
+  </script>
+</body>
+</html>
